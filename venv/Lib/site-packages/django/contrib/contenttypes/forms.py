@@ -14,9 +14,9 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
         opts = self.model._meta
         self.instance = instance
         self.rel_name = (
-            opts.app_label + '-' + opts.model_name + '-' +
-            self.ct_field.name + '-' + self.ct_fk_field.name
-        )
+            (f'{opts.app_label}-{opts.model_name}-' + self.ct_field.name) + '-'
+        ) + self.ct_fk_field.name
+
         self.save_as_new = save_as_new
         if self.instance is None or self.instance.pk is None:
             qs = self.model._default_manager.none()
@@ -31,17 +31,14 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
         super().__init__(queryset=qs, data=data, files=files, prefix=prefix, **kwargs)
 
     def initial_form_count(self):
-        if self.save_as_new:
-            return 0
-        return super().initial_form_count()
+        return 0 if self.save_as_new else super().initial_form_count()
 
     @classmethod
     def get_default_prefix(cls):
         opts = cls.model._meta
         return (
-            opts.app_label + '-' + opts.model_name + '-' +
-            cls.ct_field.name + '-' + cls.ct_fk_field.name
-        )
+            (f'{opts.app_label}-{opts.model_name}-' + cls.ct_field.name) + '-'
+        ) + cls.ct_fk_field.name
 
     def save_new(self, form, commit=True):
         setattr(form.instance, self.ct_field.get_attname(), ContentType.objects.get_for_model(self.instance).pk)

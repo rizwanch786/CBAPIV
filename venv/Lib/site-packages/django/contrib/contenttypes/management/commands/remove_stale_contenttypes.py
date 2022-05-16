@@ -50,16 +50,16 @@ class Command(BaseCommand):
                 if interactive:
                     ct_info = []
                     for ct in to_remove:
-                        ct_info.append('    - Content type for %s.%s' % (ct.app_label, ct.model))
+                        ct_info.append(f'    - Content type for {ct.app_label}.{ct.model}')
                         collector = NoFastDeleteCollector(using=using)
                         collector.collect([ct])
 
-                        for obj_type, objs in collector.data.items():
-                            if objs != {ct}:
-                                ct_info.append('    - %s %s object(s)' % (
-                                    len(objs),
-                                    obj_type._meta.label,
-                                ))
+                        ct_info.extend(
+                            f'    - {len(objs)} {obj_type._meta.label} object(s)'
+                            for obj_type, objs in collector.data.items()
+                            if objs != {ct}
+                        )
+
                     content_type_display = '\n'.join(ct_info)
                     self.stdout.write("""Some content types in your database are stale and can be deleted.
 Any objects that depend on these content types will also be deleted.
@@ -81,9 +81,8 @@ If you're unsure, answer 'no'.""" % content_type_display)
                         if verbosity >= 2:
                             self.stdout.write("Deleting stale content type '%s | %s'" % (ct.app_label, ct.model))
                         ct.delete()
-                else:
-                    if verbosity >= 2:
-                        self.stdout.write("Stale content types remain.")
+                elif verbosity >= 2:
+                    self.stdout.write("Stale content types remain.")
 
 
 class NoFastDeleteCollector(Collector):

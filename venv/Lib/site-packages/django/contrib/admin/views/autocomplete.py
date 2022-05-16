@@ -17,9 +17,9 @@ class AutocompleteJsonView(BaseListView):
         """
         if not self.model_admin.get_search_fields(request):
             raise Http404(
-                '%s must have search_fields for the autocomplete_view.' %
-                type(self.model_admin).__name__
+                f'{type(self.model_admin).__name__} must have search_fields for the autocomplete_view.'
             )
+
         if not self.has_perm(request):
             return JsonResponse({'error': '403 Forbidden'}, status=403)
 

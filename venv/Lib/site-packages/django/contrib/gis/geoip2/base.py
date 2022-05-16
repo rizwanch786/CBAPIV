@@ -70,7 +70,7 @@ class GeoIP2:
         if cache in self.cache_options:
             self._cache = cache
         else:
-            raise GeoIP2Exception('Invalid GeoIP caching option: %s' % cache)
+            raise GeoIP2Exception(f'Invalid GeoIP caching option: {cache}')
 
         # Getting the GeoIP data path.
         path = path or GEOIP_SETTINGS['GEOIP_PATH']
@@ -92,7 +92,7 @@ class GeoIP2:
                 self._city = geoip2.database.Reader(str(city_db), mode=cache)
                 self._city_file = city_db
             if not self._reader:
-                raise GeoIP2Exception('Could not load a database from %s.' % path)
+                raise GeoIP2Exception(f'Could not load a database from {path}.')
         elif path.is_file():
             # Otherwise, some detective work will be needed to figure out
             # whether the given database path is for the GeoIP country or city
@@ -109,7 +109,7 @@ class GeoIP2:
                 self._country = reader
                 self._country_file = path
             else:
-                raise GeoIP2Exception('Unable to recognize database edition: %s' % db_type)
+                raise GeoIP2Exception(f'Unable to recognize database edition: {db_type}')
         else:
             raise GeoIP2Exception('GeoIP path must be a valid file or directory.')
 
@@ -119,10 +119,7 @@ class GeoIP2:
 
     @property
     def _country_or_city(self):
-        if self._country:
-            return self._country.country
-        else:
-            return self._city.city
+        return self._country.country if self._country else self._city.city
 
     def __del__(self):
         # Cleanup any GeoIP file handles lying around.
@@ -131,7 +128,8 @@ class GeoIP2:
 
     def __repr__(self):
         meta = self._reader.metadata()
-        version = '[v%s.%s]' % (meta.binary_format_major_version, meta.binary_format_minor_version)
+        version = f'[v{meta.binary_format_major_version}.{meta.binary_format_minor_version}]'
+
         return '<%(cls)s %(version)s _country_file="%(country)s", _city_file="%(city)s">' % {
             'cls': self.__class__.__name__,
             'version': version,
@@ -143,15 +141,18 @@ class GeoIP2:
         "Check the query and database availability."
         # Making sure a string was passed in for the query.
         if not isinstance(query, str):
-            raise TypeError('GeoIP query must be a string, not type %s' % type(query).__name__)
+            raise TypeError(
+                f'GeoIP query must be a string, not type {type(query).__name__}'
+            )
+
 
         # Extra checks for the existence of country and city databases.
-        if city_or_country and not (self._country or self._city):
+        if city_or_country and not self._country and not self._city:
             raise GeoIP2Exception('Invalid GeoIP country and city data files.')
         elif country and not self._country:
-            raise GeoIP2Exception('Invalid GeoIP country data file: %s' % self._country_file)
+            raise GeoIP2Exception(f'Invalid GeoIP country data file: {self._country_file}')
         elif city and not self._city:
-            raise GeoIP2Exception('Invalid GeoIP city data file: %s' % self._city_file)
+            raise GeoIP2Exception(f'Invalid GeoIP city data file: {self._city_file}')
 
         # Return the query string back to the caller. GeoIP2 only takes IP addresses.
         try:
@@ -193,10 +194,7 @@ class GeoIP2:
     # #### Coordinate retrieval routines ####
     def coords(self, query, ordering=('longitude', 'latitude')):
         cdict = self.city(query)
-        if cdict is None:
-            return None
-        else:
-            return tuple(cdict[o] for o in ordering)
+        return None if cdict is None else tuple(cdict[o] for o in ordering)
 
     def lon_lat(self, query):
         "Return a tuple of the (longitude, latitude) for the given query."
@@ -208,8 +206,7 @@ class GeoIP2:
 
     def geos(self, query):
         "Return a GEOS Point object for the given query."
-        ll = self.lon_lat(query)
-        if ll:
+        if ll := self.lon_lat(query):
             from django.contrib.gis.geos import Point
             return Point(ll, srid=4326)
         else:

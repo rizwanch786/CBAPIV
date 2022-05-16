@@ -25,9 +25,12 @@ class InclusionAdminNode(InclusionNode):
         object_name = opts.object_name.lower()
         # Load template for this render call. (Setting self.filename isn't
         # thread-safe.)
-        context.render_context[self] = context.template.engine.select_template([
-            'admin/%s/%s/%s' % (app_label, object_name, self.template_name),
-            'admin/%s/%s' % (app_label, self.template_name),
-            'admin/%s' % self.template_name,
-        ])
+        context.render_context[self] = context.template.engine.select_template(
+            [
+                f'admin/{app_label}/{object_name}/{self.template_name}',
+                f'admin/{app_label}/{self.template_name}',
+                f'admin/{self.template_name}',
+            ]
+        )
+
         return super().render(context)

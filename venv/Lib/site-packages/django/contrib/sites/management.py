@@ -27,10 +27,9 @@ def create_default_site(app_config, verbosity=2, interactive=True, using=DEFAULT
             print("Creating example.com Site object")
         Site(pk=getattr(settings, 'SITE_ID', 1), domain="example.com", name="example.com").save(using=using)
 
-        # We set an explicit pk instead of relying on auto-incrementation,
-        # so we need to reset the database sequence. See #17415.
-        sequence_sql = connections[using].ops.sequence_reset_sql(no_style(), [Site])
-        if sequence_sql:
+        if sequence_sql := connections[using].ops.sequence_reset_sql(
+            no_style(), [Site]
+        ):
             if verbosity >= 2:
                 print("Resetting sequence")
             with connections[using].cursor() as cursor:

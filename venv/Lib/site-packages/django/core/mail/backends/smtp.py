@@ -54,10 +54,11 @@ class EmailBackend(BaseEmailBackend):
         if self.timeout is not None:
             connection_params['timeout'] = self.timeout
         if self.use_ssl:
-            connection_params.update({
+            connection_params |= {
                 'keyfile': self.ssl_keyfile,
                 'certfile': self.ssl_certfile,
-            })
+            }
+
         try:
             self.connection = self.connection_class(self.host, self.port, **connection_params)
 
@@ -77,17 +78,16 @@ class EmailBackend(BaseEmailBackend):
         if self.connection is None:
             return
         try:
-            try:
-                self.connection.quit()
-            except (ssl.SSLError, smtplib.SMTPServerDisconnected):
-                # This happens when calling quit() on a TLS connection
-                # sometimes, or when the connection was already disconnected
-                # by the server.
-                self.connection.close()
-            except smtplib.SMTPException:
-                if self.fail_silently:
-                    return
-                raise
+            self.connection.quit()
+        except (ssl.SSLError, smtplib.SMTPServerDisconnected):
+            # This happens when calling quit() on a TLS connection
+            # sometimes, or when the connection was already disconnected
+            # by the server.
+            self.connection.close()
+        except smtplib.SMTPException:
+            if self.fail_silently:
+                return
+            raise
         finally:
             self.connection = None
 
